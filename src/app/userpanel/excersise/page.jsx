@@ -1,10 +1,11 @@
 import React from 'react';
-import Mussleform from '@/components/userpanel/Mussleform';
-import Sidebar from '@/components/userpanel/sidebar';
+import Exersietable from '@/components/userpanel/exersietable';
 
 function Exercise() {
   return (
-    <p>salam</p>
+    <div>
+      <Exersietable/>
+    </div>
   );
 }
 

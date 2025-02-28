@@ -25,7 +25,7 @@ function Sectionone() {
                 <br />
                 <button
                   className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                  onClick={() => setStart(true)} // ✅ Corrected here
+                  onClick={() => setStart(true)} 
                 >
                   Begin your journey
                 </button>

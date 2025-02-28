@@ -1,164 +1,102 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
-const steps = [
-  { id: 1, title: "Step 1: Personal Info", component: PersonalInfo },
-  { id: 2, title: "Step 2: Preferences", component: Preferences },
-  { id: 3, title: "Step 3: Summary", component: Summary },
-];
+export default function SimpleForm() {
+  const [formData, setFormData] = useState({ name: "", email: "", gender: "" });
+  const [errors, setErrors] = useState({});
+  const [progress, setProgress] = useState(0);
 
-export default function ProgressiveForm() {
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({ name: "", gender: "", preference: "" });
-  const [userId, setUserId] = useState(null);
-
-  useEffect(() => {
-    const savedData = JSON.parse(localStorage.getItem("appData"));
-    if (savedData) {
-      // Get the last user ID and increment it
-      const newUserId = savedData.userCount + 1;
-      setUserId(newUserId);
-      
-      // Restore form data if available
-      if (savedData.user?.formProgress) {
-        setStep(savedData.user.formProgress.step);
-        setFormData(savedData.user.formProgress.formData);
-      }
-    } else {
-      // Initialize with user ID 1 if no previous data exists
-      setUserId(1);
+  const validate = () => {
+    let newErrors = {};
+    if (!formData.name.trim()) newErrors.name = "Name is required";
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Invalid email format";
     }
-  }, []);
+    if (!formData.gender) newErrors.gender = "Gender is required";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-  useEffect(() => {
-    const existingData = JSON.parse(localStorage.getItem("appData")) || {};
-    
-    // If no userCount exists, initialize it
-    const userCount = existingData.userCount || 0;
-    
-    const updatedData = {
-      ...existingData,
-      userCount: userCount + 1, // Increment user count
-      user: {
-        ...existingData.user,
-        [userId]: {
-          formProgress: {
-            step,
-            formData
-          }
-        }
-      }
-    };
-    
-    localStorage.setItem("appData", JSON.stringify(updatedData));
-  }, [formData, step, userId]);
+  const updateProgress = () => {
+    let filledFields = Object.values(formData).filter(value => value.trim() !== "").length;
+    setProgress((filledFields / 3) * 100);
+  };
 
-  const nextStep = () => setStep((prev) => prev + 1);
-  const prevStep = () => setStep((prev) => prev - 1);
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    updateProgress();
+  };
 
-  const CurrentStepComponent = steps.find((s) => s.id === step)?.component || null;
-  const progressPercentage = ((step - 1) / (steps.length - 1)) * 100;
-  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+    try {
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (!response.ok) throw new Error("Submission failed");
+      console.log("Form submitted successfully");
+      setFormData({ name: "", email: "", gender: "" });
+      setProgress(0);
+    } catch (error) {
+      console.error("Error submitting form:", error);
+    }
+  };
+
   return (
-    <div className="max-w-7xl mx-auto p-6 bg-white shadow-lg rounded-lg">
-      <h2 className="text-2xl font-bold mb-4">{steps[step - 1]?.title}</h2>
+    <div className="flex items-center justify-center min-h-screen bg-[#0f0e0c]">
+      <div className="max-w-md w-full p-6 bg-white shadow-md rounded-md">
+        <h2 className="text-xl font-semibold mb-4 text-center">User Information</h2>
+        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+          <div className="bg-blue-500 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <label className="block text-gray-700">Name:</label>
+          <input
+            type="text"
+            name="name"
+            className="w-full border rounded p-2 mt-2"
+            value={formData.name}
+            onChange={handleChange}
+            required
+          />
+          {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
 
-      {CurrentStepComponent && (
-        <CurrentStepComponent formData={formData} setFormData={setFormData} />
-      )}
+          <label className="block text-gray-700 mt-4">Email:</label>
+          <input
+            type="email"
+            name="email"
+            className="w-full border rounded p-2 mt-2"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+          {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
 
-      {/* Progress Bar */}
-      <div className="w-full bg-gray-200 h-2 rounded-full mt-4">
-        <div
-          className="bg-blue-500 h-2 rounded-full"
-          style={{ width: `${progressPercentage}%` }}
-        ></div>
-      </div>
+          <label className="block text-gray-700 mt-4">Gender:</label>
+          <select
+            name="gender"
+            className="w-full border rounded p-2 mt-2"
+            value={formData.gender}
+            onChange={handleChange}
+            required
+          >
+            <option value="">Select Gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+          {errors.gender && <p className="text-red-500 text-sm">{errors.gender}</p>}
 
-      {/* Navigation Buttons */}
-      <div className="mt-6 flex justify-between">
-        {step > 1 && (
-          <button className="bg-gray-400 text-white px-4 py-2 rounded" onClick={prevStep}>
-            Back
-          </button>
-        )}
-        {step < steps.length ? (
-          <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={nextStep}>
-            Next
-          </button>
-        ) : (
-          <button className="bg-green-500 text-white px-4 py-2 rounded">
+          <button type="submit" className="w-full bg-blue-500 text-white p-2 mt-4 rounded">
             Submit
           </button>
-        )}
+        </form>
       </div>
-    </div>
-  );
-}
-
-function PersonalInfo({ formData, setFormData }) {
-  return (
-    <div>
-      <label className="block text-gray-700">Name:</label>
-      <input
-        type="text"
-        className="w-full border rounded p-2 mt-2"
-        value={formData.name}
-        onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))} 
-      />
-
-      <label className="block text-gray-700 mt-4">Gender:</label>
-      <div className="flex gap-2 mt-2">
-        <button
-          className={`px-4 py-2 rounded ${
-            formData.gender === "Male" ? "bg-blue-500 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => setFormData((prev) => ({ ...prev, gender: "Male" }))}>
-          Male
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${
-            formData.gender === "Female" ? "bg-pink-500 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => setFormData((prev) => ({ ...prev, gender: "Female" }))}>
-          Female
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function Preferences({ formData, setFormData }) {
-  return (
-    <div>
-      <label className="block text-gray-700">Preference:</label>
-      <div className="flex gap-2 mt-2">
-        <button
-          className={`px-4 py-2 rounded ${
-            formData.preference === "Fitness" ? "bg-blue-500 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => setFormData((prev) => ({ ...prev, preference: "Fitness" }))}>
-          Fitness
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${
-            formData.preference === "Technology" ? "bg-green-500 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => setFormData((prev) => ({ ...prev, preference: "Technology" }))}>
-          Technology
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function Summary({ formData }) {
-  return (
-    <div>
-      <h3 className="text-lg font-semibold">Review Your Info</h3>
-      <p className="mt-2">Name: {formData.name || "Not provided"}</p>
-      <p>Gender: {formData.gender || "Not selected"}</p>
-      <p>Preference: {formData.preference || "Not selected"}</p>
     </div>
   );
 }

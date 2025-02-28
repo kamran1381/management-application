@@ -11,29 +11,47 @@ function Programformadd() {
     weight: '',
     sessionCount: '',
   });
+  const [errors, setErrors] = useState({});
   const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
 
-  // Track the progress of the form completion
   useEffect(() => {
     setIsMounted(true);
-  }, []); // This only runs once when the component is mounted
+  }, []);
 
   useEffect(() => {
-    // Calculate progress whenever formData changes
     const filledInputs = Object.values(formData).filter(value => value).length;
     setProgress((filledInputs / Object.keys(formData).length) * 100);
-  }, [formData]); // Only runs when formData changes
+  }, [formData]);
 
-  const handleSubmit = async () => {
-    const LocalStorageformData = JSON.stringify(formData);
-    localStorage.setItem('LocalStorageformData', LocalStorageformData);
-     console.log('program submitted')
-    // Redirect user to the program build page
-    router.push('/userpanel/program');
+  const validateForm = () => {
+    let newErrors = {};
+    if (!/^[0-9]+$/.test(formData.phoneNumber) || formData.phoneNumber.length < 4) {
+      newErrors.phoneNumber = 'Phone number must be at least 4 digits and contain only numbers';
+    }
+    ['age', 'height', 'weight', 'sessionCount'].forEach(field => {
+      if (!/^[0-9]+$/.test(formData[field])) {
+        newErrors[field] = 'This field must contain only numbers';
+      }
+    });
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  if (!isMounted) return null; // Prevent rendering until the component is mounted
+  const handleSubmit = () => {
+    if (!validateForm()) return;
+
+    // Store the form data in localStorage
+    const existingPrograms = JSON.parse(localStorage.getItem('programs')) || [];
+    existingPrograms.push(formData);
+
+    localStorage.setItem('programs', JSON.stringify(existingPrograms));
+
+    router.push('/userpanel/program');
+    console.log('submitted')
+  };
+
+  if (!isMounted) return null;
 
   return (
     <div className="flex flex-col items-center pt-20">
@@ -54,34 +72,24 @@ function Programformadd() {
               type="text"
               value={formData.phoneNumber}
               onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-              className="mb-10 bg-transparent border border-[#E60000] py-1"
+              className="mb-2 bg-transparent border border-[#E60000] py-1"
             />
+            {errors.phoneNumber && <span className="text-red-500">{errors.phoneNumber}</span>}
           </div>
           <div className="w-full md:w-1/5 lg:px-8 flex flex-col">
-            <label className="pb-2">Age</label>
-            <input
-              name="age"
-              type="text"
-              value={formData.age}
-              onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-              className="mb-10 bg-transparent border border-[#E60000] py-1"
-            />
-            <label className="pb-2">Height (cm)</label>
-            <input
-              name="height"
-              type="text"
-              value={formData.height}
-              onChange={(e) => setFormData({ ...formData, height: e.target.value })}
-              className="mb-10 bg-transparent border border-[#E60000] py-1"
-            />
-            <label className="pb-2">Weight (kg)</label>
-            <input
-              name="weight"
-              type="text"
-              value={formData.weight}
-              onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-              className="mb-10 bg-transparent border border-[#E60000] py-1"
-            />
+            {['age', 'height', 'weight'].map(field => (
+              <div key={field}>
+                <label className="pb-2">{field.charAt(0).toUpperCase() + field.slice(1)} (cm/kg)</label>
+                <input
+                  name={field}
+                  type="text"
+                  value={formData[field]}
+                  onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
+                  className="mb-2 bg-transparent border border-[#E60000] py-1"
+                />
+                {errors[field] && <span className="text-red-500">{errors[field]}</span>}
+              </div>
+            ))}
           </div>
           <div className="w-full md:w-1/5 flex flex-col">
             <label className="pb-2">Session Count</label>
@@ -90,8 +98,9 @@ function Programformadd() {
               type="text"
               value={formData.sessionCount}
               onChange={(e) => setFormData({ ...formData, sessionCount: e.target.value })}
-              className="mb-10 bg-transparent border border-[#E60000] py-1"
+              className="mb-2 bg-transparent border border-[#E60000] py-1"
             />
+            {errors.sessionCount && <span className="text-red-500">{errors.sessionCount}</span>}
           </div>
         </div>
         <button
