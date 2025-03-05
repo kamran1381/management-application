@@ -11,7 +11,7 @@ function Newexcersice() {
                     <Sidebar />
                 </div>
                 <div className='lg:w-4/5 w-full flex justify-center'>
-                    {/* Main content area */}
+                    {/* Main content area s */}
                     <NewExerciseForm />
                 </div>
             </div>
