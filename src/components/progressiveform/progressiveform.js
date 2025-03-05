@@ -92,7 +92,7 @@ export default function SimpleForm() {
           </select>
           {errors.gender && <p className="text-red-500 text-sm">{errors.gender}</p>}
 
-          <button type="submit" className="w-full bg-blue-500 text-white p-2 mt-4 rounded">
+          <button type="submit" className="w-full bg-blue-500 text-white p-2 mt-4 rounded-full">
             Submit
           </button>
         </form>
