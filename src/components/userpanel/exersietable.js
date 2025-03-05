@@ -58,7 +58,7 @@ function ExerciseTable() {
               <tr key={index}>
                 <td className="border-b px-4 py-2">{exercise.exerciseName}</td>
                 <td className="border-b px-4 py-2">{exercise.exerciseDetails}</td>
-                <td className="border-b px-4 py-2 text-center">
+                <td className="border-b px-5 py-2 text-center">
                   <button
                     onClick={() => handleDelete(index)}
                     className="text-red-600 hover:text-red-800 transition-colors"
